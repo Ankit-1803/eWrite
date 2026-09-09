@@ -10,62 +10,74 @@ import { googleAuth } from "../utils/firebase";
 
 function AuthForm({type}) {
     const [userData, setUserData] = useState({
-            name: "", 
-            email: "", 
-            password: "" ,
-        })
+        name: "", 
+        email: "", 
+        password: "" ,
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
-const dispatch = useDispatch()
-const navigate= useNavigate()
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
-async function handleAuthForm(e) {
-    e.preventDefault();
-    try {
-        
-        const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/${type}`,userData)
-        
-        if(type =="signup") {
-            toast.success(res.data.message);
-            navigate("/signin")
+    async function handleAuthForm(e) {
+        e.preventDefault();
+        if (isSubmitting || isGoogleSubmitting) return;
+
+        setIsSubmitting(true);
+        try {
+            const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/${type}`, userData);
+            
+            if (type === "signup") {
+                toast.success(res.data.message);
+                setUserData({
+                    name: "", 
+                    email: "", 
+                    password: "" 
+                });
+                navigate("/signin");
+            } else {
+                // Store user's data and token to Redux Slices
+                dispatch(login(res.data.user));
+                toast.success(res.data.message);  
+                setUserData({
+                    name: "", 
+                    email: "", 
+                    password: "" 
+                });
+                navigate("/");
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Authentication failed");
+        } finally {
+            setIsSubmitting(false);
         }
-        else {
-            // Store user's data and token to Redux Slices
-            dispatch(login(res.data.user))
-            toast.success(res.data.message);  
-            navigate("/")
+    }
+        
+    async function handleGoogleAuth() {
+        if (isGoogleSubmitting || isSubmitting) return;
+
+        setIsGoogleSubmitting(true);
+        try {
+            let user = await googleAuth();
+            if (!user) {
+                return;
+            }
+
+            const idToken = typeof user.getIdToken === "function" ? await user.getIdToken() : user.accessToken;
+
+            let res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/google-auth`, {
+                accessToken: idToken
+            });
+            dispatch(login(res.data.user));
+            toast.success(res.data.message); 
+            navigate("/");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Google sign in failed");
+        } finally {
+            setIsGoogleSubmitting(false);
         }
-        
-        
-    } 
-    catch (error) {
-        toast.error(error.response?.data?.message || "Authentication failed")
     }
-    finally {
-        setUserData({
-            name: "", 
-            email: "", 
-            password: "" 
-        })
-    }
-}
-    
-async function handleGoogleAuth() {
-    try {
-        let user = await googleAuth()
-        if (!user) return
-
-        const idToken = typeof user.getIdToken === "function" ? await user.getIdToken() : user.accessToken
-
-        let res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/google-auth`,{
-            accessToken: idToken
-        })
-        dispatch(login(res.data.user))
-        toast.success(res.data.message); 
-        navigate("/")
-    } catch (error) {
-        toast.error(error.response?.data?.message || "Google sign in failed")
-    }
-}
 
     return (
         
@@ -365,14 +377,16 @@ async function handleGoogleAuth() {
                         <br />
 
 
-                        {/* ================= REGISTER BUTTON ================= */}
+                        {/* ================= REGISTER / LOGIN BUTTON ================= */}
 
                         <button
-                            className="
+                            type="submit"
+                            disabled={isSubmitting || isGoogleSubmitting}
+                            aria-busy={isSubmitting}
+                            className={`
                                 w-full
                                 h-[54px]
                                 focus:outline-none
-                                hover:cursor-pointer
                                 text-lg
                                 font-bold
                                 text-white
@@ -381,17 +395,51 @@ async function handleGoogleAuth() {
                                 to-emerald-600
                                 rounded-xl
                                 shadow-[0_10px_25px_rgba(16,185,129,0.25)]
-                                hover:shadow-[0_14px_30px_rgba(16,185,129,0.35)]
-                                hover:-translate-y-[2px]
-                                active:translate-y-0
                                 transition-all
                                 duration-200
-                            "
+                                flex
+                                items-center
+                                justify-center
+                                ${
+                                    isSubmitting || isGoogleSubmitting
+                                        ? "opacity-70 cursor-not-allowed shadow-none"
+                                        : "hover:cursor-pointer hover:shadow-[0_14px_30px_rgba(16,185,129,0.35)] hover:-translate-y-[2px] active:translate-y-0"
+                                }
+                            `}
                         >
-                            {type === "signin" ? "Login" : "Register"}
-                            <span className="ml-2">
-                                →
-                            </span>
+                            {isSubmitting ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <svg
+                                        className="animate-spin h-5 w-5 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        aria-hidden="true"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                        ></path>
+                                    </svg>
+                                    <span>{type === "signin" ? "Logging in..." : "Creating account..."}</span>
+                                </span>
+                            ) : (
+                                <>
+                                    {type === "signin" ? "Login" : "Register"}
+                                    <span className="ml-2">
+                                        →
+                                    </span>
+                                </>
+                            )}
                         </button>
 
                     </form>
@@ -436,9 +484,12 @@ async function handleGoogleAuth() {
 
                     {/* ================= GOOGLE AUTH ================= */}
 
-                    <div
+                    <button
+                        type="button"
                         onClick={handleGoogleAuth}
-                        className="
+                        disabled={isGoogleSubmitting || isSubmitting}
+                        aria-busy={isGoogleSubmitting}
+                        className={`
                             bg-white
                             w-full
                             h-[54px]
@@ -451,31 +502,57 @@ async function handleGoogleAuth() {
                             border
                             border-slate-200
                             shadow-sm
-                            hover:bg-slate-50
-                            hover:border-slate-300
-                            hover:shadow-md
-                            cursor-pointer
                             transition-all
                             duration-200
-                        "
+                            focus:outline-none
+                            ${
+                                isGoogleSubmitting || isSubmitting
+                                    ? "opacity-70 cursor-not-allowed"
+                                    : "hover:bg-slate-50 hover:border-slate-300 hover:shadow-md cursor-pointer"
+                            }
+                        `}
                     >
+                        {isGoogleSubmitting ? (
+                            <div className="flex items-center justify-center gap-3">
+                                <svg
+                                    className="animate-spin h-5 w-5 text-slate-600"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                >
+                                    <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                    ></path>
+                                </svg>
+                                <p className="text-base font-semibold text-slate-700">
+                                    Signing in with Google...
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <img
+                                    className="w-5 h-5"
+                                    src={googleIcon}
+                                    alt="Google"
+                                />
 
-                        <img
-                            className="w-5 h-5"
-                            src={googleIcon}
-                            alt="eWrite"
-                        />
-
-
-                        <p className="
-                            text-base
-                            font-semibold
-                            text-slate-700
-                        ">
-                            Continue with Google
-                        </p>
-
-                    </div>
+                                <p className="text-base font-semibold text-slate-700">
+                                    Continue with Google
+                                </p>
+                            </>
+                        )}
+                    </button>
 
 
 
