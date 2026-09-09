@@ -47,6 +47,7 @@ The application follows a client-server architecture where the frontend communic
 * Save blogs for later
 * View liked blogs
 * View saved blogs
+* Make nested comments on blogs
 * Read published blog posts
 
 ### 📂 Draft Management
@@ -72,6 +73,8 @@ The profile includes:
 * Saved blogs
 * Draft blogs
 * Liked blogs
+* Following list
+* Edit profile
 
 ### ✍️ Rich Blog Content
 
@@ -214,7 +217,7 @@ Blog-Application/
 
 ### 1. User Authentication
 
-The user creates an account or logs into an existing account.
+The user creates an account ( by email id and password or use Google ) or logs into an existing account.
 
 The backend verifies the user's credentials and establishes an authenticated session.
 
