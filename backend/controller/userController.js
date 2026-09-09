@@ -76,7 +76,7 @@ function initFirebaseAdmin() {
 initFirebaseAdmin();
 
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
-const emailSender = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+const emailSender = process.env.EMAIL_FROM || (process.env.RESEND_API_KEY ? "eWrite <onboarding@resend.dev>" : (process.env.EMAIL_USER || "onboarding@resend.dev"));
 
 
 // Create a new user
