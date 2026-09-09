@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const bcrypt = require("bcrypt");
 const ShortUniqueId = require("short-unique-id");
-const { initializeApp, cert } = require("firebase-admin/app");
+const { initializeApp, cert, getApps } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 
 const User = require("../models/userSchema");
@@ -14,11 +14,18 @@ const { randomUUID } = new ShortUniqueId({ length: 5 });
 
 // Initialize Firebase Admin SDK safely
 function initFirebaseAdmin() {
+    if (getApps().length > 0) {
+        return getApps()[0];
+    }
+
     let serviceAccountCredential = null;
 
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
         try {
-            const raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+            let raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+            if ((raw.startsWith("'") && raw.endsWith("'")) || (raw.startsWith('"') && raw.endsWith('"'))) {
+                raw = raw.slice(1, -1).trim();
+            }
             const jsonString = raw.startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf-8");
             serviceAccountCredential = JSON.parse(jsonString);
         } catch (err) {
@@ -26,28 +33,43 @@ function initFirebaseAdmin() {
         }
     } else if (process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_CLIENT_EMAIL) {
         serviceAccountCredential = {
-            projectId: process.env.FIREBASE_PROJECT_ID,
+            projectId: process.env.FIREBASE_PROJECT_ID || "ewrite-fe5d3",
             clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
             privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
         };
     } else {
+        const customPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || process.env.GOOGLE_APPLICATION_CREDENTIALS;
         const localKeyPath = path.resolve(__dirname, "../ewrite-fe5d3-firebase-adminsdk-fbsvc-2dc66c3111.json");
-        if (fs.existsSync(localKeyPath)) {
+        const renderSecretPath = "/etc/secrets/firebase-service-account.json";
+
+        const pathToLoad = [customPath, localKeyPath, renderSecretPath].find((p) => p && fs.existsSync(p));
+        if (pathToLoad) {
             try {
-                serviceAccountCredential = require(localKeyPath);
+                serviceAccountCredential = require(pathToLoad);
             } catch (err) {
-                console.error("Failed to load local Firebase service account keyfile:", err.message);
+                console.error("Failed to load Firebase service account keyfile:", err.message);
             }
         }
     }
 
+    // Always specify projectId so getAuth().verifyIdToken() never fails with "Unable to detect a Project Id"
+    const projectId =
+        process.env.FIREBASE_PROJECT_ID ||
+        serviceAccountCredential?.project_id ||
+        serviceAccountCredential?.projectId ||
+        "ewrite-fe5d3";
+
+    const appOptions = { projectId };
     if (serviceAccountCredential) {
-        initializeApp({
-            credential: cert(serviceAccountCredential),
-        });
-    } else {
-        console.warn("Firebase Admin initialized without explicit credentials.");
-        initializeApp();
+        appOptions.credential = cert(serviceAccountCredential);
+    }
+
+    try {
+        const app = initializeApp(appOptions);
+        console.log(`Firebase Admin initialized successfully (projectId: ${projectId})`);
+        return app;
+    } catch (err) {
+        console.error("Firebase Admin initialization error:", err.message);
     }
 }
 
@@ -124,26 +146,60 @@ async function createUser(req, res) {
         // Generate username
         const username = email.split("@")[0] + randomUUID();
 
+        // Support AUTO_VERIFY_EMAIL for environments without outbound email access (e.g. Render free tier)
+        const autoVerify = process.env.AUTO_VERIFY_EMAIL === "true";
+
         // Insert user data in DB
         const newUser = await User.create({
             name,
             email,
             password: hashedPass,
             username,
+            isVerify: autoVerify,
         });
+
+        if (autoVerify) {
+            let token = await generateJWT({ email: newUser.email, id: newUser._id });
+            return res.status(200).json({
+                success: true,
+                message: "Account created successfully",
+                user: {
+                    id: newUser._id,
+                    name: newUser.name,
+                    email: newUser.email,
+                    username: newUser.username,
+                    profilePic: newUser.profilePic,
+                    bio: newUser.bio,
+                    showLikedBlogs: newUser.showLikedBlogs,
+                    showSavedBlogs: newUser.showSavedBlogs,
+                    token,
+                },
+            });
+        }
 
         // Generate verification token and send email
         let verificationToken = await generateJWT({ email: newUser.email, id: newUser._id });
 
-        await transporter.sendMail({
-            from: emailSender,
-            to: email,
-            subject: "Email verification for eWrite",
-            text: "Please verify your email",
-            html: `<h1> Click on the link to verify your email </h1>
-            <a href="${clientUrl}/verify-email/${verificationToken}">Verify Email</a>
-            `,
-        });
+        try {
+            await transporter.sendMail({
+                from: emailSender,
+                to: email,
+                subject: "Email verification for eWrite",
+                text: "Please verify your email",
+                html: `<h1> Click on the link to verify your email </h1>
+                <a href="${clientUrl}/verify-email/${verificationToken}">Verify Email</a>
+                `,
+            });
+        } catch (emailErr) {
+            // Delete newly created unverified user so they are not locked out from signing up again
+            await User.findByIdAndDelete(newUser._id);
+            console.error("Failed to send verification email:", emailErr.message);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to send verification email. " + (emailErr.message.includes("ETIMEDOUT") ? "Outbound SMTP port 465 timed out on Render free tier. Use RESEND_API_KEY or set AUTO_VERIFY_EMAIL=true." : emailErr.message),
+                error: emailErr.message,
+            });
+        }
 
         return res.status(200).json({
             success: true,
@@ -245,15 +301,24 @@ async function login(req, res) {
         if (!checkForExistingUser.isVerify) {
             // Send verification email
             let verificationToken = await generateJWT({ email: checkForExistingUser.email, id: checkForExistingUser._id });
-            await transporter.sendMail({
-                from: emailSender,
-                to: checkForExistingUser.email,
-                subject: "Email verification for eWrite",
-                text: "Please verify your email",
-                html: `<h1> Click on the link to verify your email </h1>
-                <a href="${clientUrl}/verify-email/${verificationToken}">Verify Email</a>
-                `,
-            });
+            try {
+                await transporter.sendMail({
+                    from: emailSender,
+                    to: checkForExistingUser.email,
+                    subject: "Email verification for eWrite",
+                    text: "Please verify your email",
+                    html: `<h1> Click on the link to verify your email </h1>
+                    <a href="${clientUrl}/verify-email/${verificationToken}">Verify Email</a>
+                    `,
+                });
+            } catch (emailErr) {
+                console.error("Failed to send verification email:", emailErr.message);
+                return res.status(500).json({
+                    success: false,
+                    message: "Failed to send verification email. " + (emailErr.message.includes("ETIMEDOUT") ? "Outbound SMTP port 465 timed out on Render free tier. Use RESEND_API_KEY or set AUTO_VERIFY_EMAIL=true." : emailErr.message),
+                    error: emailErr.message,
+                });
+            }
             
             return res.status(400).json({
                 success: false,
