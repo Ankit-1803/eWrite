@@ -458,20 +458,12 @@ Common cases include:
 
 Possible improvements for future versions include:
 
-* 💬 Blog comments
-* 🔍 Advanced blog search
-* 🏷️ Categories and tags
-* 👥 Follow users
 * 🔔 Notifications
-* 🖼️ Image uploads
 * ❤️ Improved reaction system
 * 📊 User analytics
 * 🌙 Dark mode
-* 📱 Improved mobile responsiveness
-* ✨ Richer text editor
 * 📧 Email notifications
 * 🔗 Social sharing
-* 📑 Pagination and infinite scrolling
 
 ---
 
