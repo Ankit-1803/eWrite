@@ -13,16 +13,39 @@ const PORT = process.env.PORT || 4000;
 
 app.use(express.json());
 
-const allowedOrigins = [
+// CORS Configuration
+const defaultOrigins = [
     "http://localhost:5173",
-    ...(process.env.CLIENT_URL ? [process.env.CLIENT_URL.replace(/\/$/, "")] : []),
+    "http://localhost:3000",
+    "https://e-write.vercel.app",
 ];
 
-app.use(cors({
-    origin: allowedOrigins,
-    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
+const envOrigins = (process.env.CLIENT_URL || "")
+    .split(",")
+    .map((url) => url.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+
+        // Match exact allowed origins or any Vercel deployment domain
+        if (allowedOrigins.includes(origin) || /^https:\/\/.*\.vercel\.app$/.test(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(null, false);
+    },
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
     credentials: true,
-}));
+    optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
 
 app.use("/api/v1", userRoutes);
 app.use("/api/v1", blogRoutes);
