@@ -11,6 +11,7 @@ function Comment() {
     const dispatch = useDispatch()
 
     const [comment, setComment] = useState("")
+    const [isAddingComment, setIsAddingComment] = useState(false)
 
     const [activeReply, setActiveReply] = useState(null)
 
@@ -29,6 +30,8 @@ function Comment() {
     
 
     async function handleComment() {
+        if (isAddingComment) return;
+        setIsAddingComment(true);
         try {
             let res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/blog/comment/${blogId}`,
                 {
@@ -44,8 +47,10 @@ function Comment() {
             setComment("");
             dispatch(setComments(res.data.newComment));
         } catch (error) {
-            toast.error(error.response.data.message)
+            toast.error(error?.response?.data?.message || "Failed to add comment")
             console.log(error)
+        } finally {
+            setIsAddingComment(false);
         }
     }
 
@@ -212,13 +217,14 @@ function Comment() {
                 ">
 
                     <button
+                        type="button"
+                        disabled={isAddingComment}
+                        aria-busy={isAddingComment}
                         onClick={handleComment}
-                        className="
+                        className={`
                             bg-gradient-to-r
                             from-green-500
                             to-emerald-500
-                            hover:from-green-600
-                            hover:to-emerald-600
                             text-white
                             text-sm
                             font-semibold
@@ -226,17 +232,49 @@ function Comment() {
                             py-2.5
                             rounded-full
                             shadow-sm
-                            hover:shadow-md
                             transition-all
                             duration-200
-                            cursor-pointer
                             flex
                             items-center
                             gap-2
-                        "
+                            ${
+                                isAddingComment
+                                    ? "opacity-70 cursor-not-allowed shadow-none"
+                                    : "hover:from-green-600 hover:to-emerald-600 hover:shadow-md cursor-pointer"
+                            }
+                        `}
                     >
-                        <i className="fi fi-rr-paper-plane"></i>
-                        Add Comment
+                        {isAddingComment ? (
+                            <>
+                                <svg
+                                    className="animate-spin h-4 w-4 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    aria-hidden="true"
+                                >
+                                    <circle
+                                        className="opacity-25"
+                                        cx="12"
+                                        cy="12"
+                                        r="10"
+                                        stroke="currentColor"
+                                        strokeWidth="4"
+                                    ></circle>
+                                    <path
+                                        className="opacity-75"
+                                        fill="currentColor"
+                                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                    ></path>
+                                </svg>
+                                <span>Adding Comment...</span>
+                            </>
+                        ) : (
+                            <>
+                                <i className="fi fi-rr-paper-plane"></i>
+                                <span>Add Comment</span>
+                            </>
+                        )}
                     </button>
 
                 </div>

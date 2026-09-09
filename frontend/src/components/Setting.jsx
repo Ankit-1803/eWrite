@@ -15,8 +15,11 @@ function Setting() {
         showLikedBlogs,
         showSavedBlogs,
     })
+    const [isSaving, setIsSaving] = useState(false)
 
     async function handleVisibility() {
+        if (isSaving) return;
+        setIsSaving(true);
         try {
             const res = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/change-blogs-visibility`, data, {
                 headers: {
@@ -29,6 +32,8 @@ function Setting() {
         navigate(-1)
         } catch (error) {
             toast.error(error?.response?.data?.message)
+        } finally {
+            setIsSaving(false);
         }
     }
 
@@ -192,10 +197,44 @@ function Setting() {
 
                         {/* Update Button */}
                         <button
-                            className="w-full h-[50px] rounded-xl font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 hover:shadow-lg hover:shadow-green-200 hover:-translate-y-[1px] active:translate-y-0 transition-all duration-200 cursor-pointer"
+                            type="button"
+                            disabled={isSaving}
+                            aria-busy={isSaving}
+                            className={`w-full h-[50px] rounded-xl font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-200 flex items-center justify-center gap-2 ${
+                                isSaving
+                                    ? "opacity-70 cursor-not-allowed shadow-none"
+                                    : "hover:from-green-600 hover:to-emerald-600 hover:shadow-lg hover:shadow-green-200 hover:-translate-y-[1px] active:translate-y-0 cursor-pointer"
+                            }`}
                             onClick={handleVisibility}
                         >
-                            Save Changes
+                            {isSaving ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <svg
+                                        className="animate-spin h-5 w-5 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        aria-hidden="true"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                                        ></path>
+                                    </svg>
+                                    <span>Saving...</span>
+                                </span>
+                            ) : (
+                                "Save Changes"
+                            )}
                         </button>
 
 
