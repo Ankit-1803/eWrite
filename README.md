@@ -2,7 +2,7 @@
 
 > A modern full-stack blogging and thought-sharing platform where users can create, publish, discover, save, like, and discuss ideas with a community of readers and writers.
 
-**eWrite** is a full-stack web application designed to provide a complete writing and content-sharing experience. It combines a responsive React frontend with a Node.js/Express REST API, MongoDB database, Firebase authentication, Cloudinary media storage, and Resend-powered email verification.
+**eWrite** is a full-stack web application designed to provide a complete writing and content-sharing experience. It combines a responsive React frontend with a Node.js/Express REST API, MongoDB database, Firebase authentication, Cloudinary media storage.
 
 The application supports user authentication, blog creation and management, drafts, likes, saved blogs, comments, replies, user profiles, privacy settings, image uploads, email verification, and production deployment.
 
@@ -13,7 +13,6 @@ The application supports user authentication, blog creation and management, draf
 ### 🔐 Authentication & User Management
 
 - Email/password registration
-- Email verification before account activation
 - Secure password hashing using `bcrypt`
 - JWT-based authentication
 - Google authentication using Firebase
@@ -104,23 +103,19 @@ eWrite uses **Resend** for transactional email delivery.
 The registration flow is:
 
 ```text
-User Registration
-       ↓
-Account Created
-       ↓
-Verification Email Sent
-       ↓
-User Opens Verification Link
-       ↓
-Frontend Verification Page
-       ↓
-Backend Verification API
-       ↓
-JWT Token Validation
-       ↓
-isVerify = true
-       ↓
-Email Verified
+                                   User Registration
+                                          ↓
+                                   Account Created
+                                          ↓
+                                   Frontend Verification Page
+                                          ↓
+                                   Backend Verification API
+                                          ↓
+                                   JWT Token Validation
+                                          ↓
+                                   isVerify = true
+                                          ↓
+                                   Email Verified
 ```
 
 Verification links are handled through the frontend and validated by the backend.
@@ -171,8 +166,9 @@ This allows users to authenticate using their Google account without creating a 
                                 │
                                 ▼
                        ┌──────────────────┐
-                       │     Resend       │
-                       │ Email Delivery   │
+                       │   Verify user's  |
+                       | credentials with |
+                       |     Database     |
                        └──────────────────┘
 
                                 +
@@ -213,7 +209,6 @@ This allows users to authenticate using their Google account without creating a 
 | Firebase Admin | Google authentication verification |
 | Multer | File upload handling |
 | Cloudinary | Image/media storage |
-| Resend | Email delivery |
 | dotenv | Environment configuration |
 
 ---
@@ -336,15 +331,6 @@ eWrite/
                          │
                          ▼
               Generate Verification JWT
-                         │
-                         ▼
-               Send Verification Email
-                         │
-                         ▼
-                User Opens Email
-                         │
-                         ▼
-              /verify-email/:token
                          │
                          ▼
                Backend Validates JWT
@@ -546,18 +532,6 @@ Cloudinary
 Images
 ```
 
-### Email
-
-**Platform:** Resend
-
-```text
-Backend
-   ↓
-Resend API
-   ↓
-Verification Email
-```
-
 ### Authentication
 
 **Platform:** Firebase
@@ -701,7 +675,6 @@ The backend follows a modular REST API structure.
     │   ├── registration
     │   ├── login
     │   ├── Google authentication
-    │   ├── email verification
     │   ├── profile operations
     │   └── follow operations
     │
@@ -948,7 +921,6 @@ Potential future improvements include:
 | Google Login | Firebase Authentication |
 | Password Security | bcrypt |
 | Image Storage | Cloudinary |
-| Email | Resend |
 | API Communication | Axios |
 | Routing | React Router |
 | Deployment | Vercel + Render |
@@ -956,66 +928,23 @@ Potential future improvements include:
 
 ---
 
-# 🤝 Contributing
-
-Contributions are welcome.
-
-A typical contribution workflow:
-
-```bash
-git checkout -b feature/your-feature
-```
-
-Make your changes, test them locally, and then create a pull request.
-
-Please ensure:
-
-- Existing functionality is not broken
-- Environment secrets are not committed
-- The frontend production build succeeds
-- Code remains organized and readable
-
----
-
-# 🔐 Security Notice
-
-Never commit sensitive files or credentials such as:
-
-```text
-.env
-.env.local
-Firebase Admin credentials
-API keys
-JWT secrets
-Database credentials
-Cloudinary secrets
-Resend API keys
-```
-
-Use environment variables for all sensitive configuration.
-
-If a credential is accidentally exposed, rotate it immediately.
-
----
 
 # 👨‍💻 Developer
 
 **Ankit Raj**
 
-B.Tech Computer Science Engineering Student
+B.Tech Software Engineering Student
 
 Project: **eWrite**
 
 ---
 
-# 📜 License
+**Connection**
 
-This project is available under the license specified in the repository.
+* GitHub: https://github.com/Ankit-1803
+* LinkedIn: https://www.linkedin.com/in/ankit-raj-851683371
+* LeetCode: https://leetcode.com/u/ankitraj03/
 
 ---
 
-# ⭐ eWrite
-
-> **Share ideas. Read stories. Grow together.**
-
-eWrite is built to make publishing thoughts simple while creating a community-driven environment for discovering and discussing ideas.
+**Thank You**
