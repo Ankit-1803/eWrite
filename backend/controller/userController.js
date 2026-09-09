@@ -105,8 +105,10 @@ async function createUser(req, res) {
             });
         }
 
+        const cleanEmail = email.trim().toLowerCase();
+
         // Check if user already exists
-        const checkForExistingUser = await User.findOne({ email }).select("+googleAuth +password +isVerify");
+        const checkForExistingUser = await User.findOne({ email: cleanEmail }).select("+password");
 
         if (checkForExistingUser) {
             if (checkForExistingUser.googleAuth && !checkForExistingUser.password) {
@@ -153,7 +155,7 @@ async function createUser(req, res) {
         const hashedPass = await bcrypt.hash(password, 10);
 
         // Generate username
-        const username = email.split("@")[0] + randomUUID();
+        const username = cleanEmail.split("@")[0] + randomUUID();
 
         // Support AUTO_VERIFY_EMAIL for environments without outbound email access (e.g. Render free tier)
         const autoVerify = process.env.AUTO_VERIFY_EMAIL === "true";
@@ -161,7 +163,7 @@ async function createUser(req, res) {
         // Insert user data in DB
         const newUser = await User.create({
             name,
-            email,
+            email: cleanEmail,
             password: hashedPass,
             username,
             isVerify: autoVerify,
@@ -278,10 +280,10 @@ async function login(req, res) {
             });
         }
 
+        const cleanEmail = email.trim().toLowerCase();
+
         // Check if user exists
-        const checkForExistingUser = await User.findOne({ email }).select(
-            "+password +isVerify +googleAuth name email profilePic username bio showLikedBlogs showSavedBlogs"
-        );
+        const checkForExistingUser = await User.findOne({ email: cleanEmail }).select("+password");
 
         if (!checkForExistingUser) {
             return res.status(400).json({
@@ -540,8 +542,10 @@ async function googleAuth(req, res) {
         const response = await getAuth().verifyIdToken(accessToken);
         const { name, email } = response;
 
+        const cleanEmail = email ? email.trim().toLowerCase() : "";
+
         // Check if user already exists
-        let user = await User.findOne({ email }).select("+googleAuth +password +isVerify");
+        let user = await User.findOne({ email: cleanEmail }).select("+password");
 
         // If user already exists:
         if (user) {
@@ -578,10 +582,10 @@ async function googleAuth(req, res) {
             }
         }
 
-        const username = email.split("@")[0] + randomUUID();
+        const username = (cleanEmail || email).split("@")[0] + randomUUID();
         let newUser = await User.create({
-            name: name || email.split("@")[0],
-            email,
+            name: name || (cleanEmail || email).split("@")[0],
+            email: cleanEmail || email,
             username,
             googleAuth: true,
             isVerify: true,
