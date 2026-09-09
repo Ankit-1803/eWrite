@@ -78,6 +78,11 @@ initFirebaseAdmin();
 const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
 const emailSender = process.env.EMAIL_FROM || (process.env.RESEND_API_KEY ? "eWrite <onboarding@resend.dev>" : (process.env.EMAIL_USER || "onboarding@resend.dev"));
 
+function isResendSandboxError(err) {
+    const msg = (err && err.message) ? err.message.toLowerCase() : "";
+    return msg.includes("only send testing emails to your own email address") || msg.includes("resend.com/domains");
+}
+
 
 // Create a new user
 async function createUser(req, res) {
@@ -141,6 +146,15 @@ async function createUser(req, res) {
                         message: "A verification email has been resent to your account. Please check your inbox.",
                     });
                 } catch (emailErr) {
+                    if (isResendSandboxError(emailErr)) {
+                        console.log(`[Resend Sandbox] Auto-verifying unverified user ${checkForExistingUser.email}`);
+                        checkForExistingUser.isVerify = true;
+                        await checkForExistingUser.save();
+                        return res.status(200).json({
+                            success: true,
+                            message: "Account verified successfully! You can now sign in.",
+                        });
+                    }
                     console.error("Failed to resend verification email:", emailErr.message);
                     return res.status(500).json({
                         success: false,
@@ -194,7 +208,7 @@ async function createUser(req, res) {
         try {
             await transporter.sendMail({
                 from: emailSender,
-                to: email,
+                to: cleanEmail,
                 subject: "Email verification for eWrite",
                 text: "Please verify your email",
                 html: `<h1> Click on the link to verify your email </h1>
@@ -202,6 +216,16 @@ async function createUser(req, res) {
                 `,
             });
         } catch (emailErr) {
+            if (isResendSandboxError(emailErr)) {
+                console.log(`[Resend Sandbox] Auto-verifying user ${cleanEmail} (onboarding@resend.dev sandbox mode active)`);
+                newUser.isVerify = true;
+                await newUser.save();
+                return res.status(200).json({
+                    success: true,
+                    message: "Account created successfully! You can now sign in with your email and password.",
+                });
+            }
+
             // Delete newly created unverified user so they are not locked out from signing up again
             await User.findByIdAndDelete(newUser._id);
             console.error("Failed to send verification email:", emailErr.message);
@@ -323,6 +347,29 @@ async function login(req, res) {
                     `,
                 });
             } catch (emailErr) {
+                if (isResendSandboxError(emailErr)) {
+                    console.log(`[Resend Sandbox] Auto-verifying user ${checkForExistingUser.email} on login (sandbox mode active)`);
+                    checkForExistingUser.isVerify = true;
+                    await checkForExistingUser.save();
+
+                    let token = await generateJWT({ email: checkForExistingUser.email, id: checkForExistingUser._id });
+                    return res.status(200).json({
+                        success: true,
+                        message: "Login successfully",
+                        user: {
+                            id: checkForExistingUser._id,
+                            name: checkForExistingUser.name,
+                            email: checkForExistingUser.email,
+                            profilePic: checkForExistingUser.profilePic,
+                            username: checkForExistingUser.username,
+                            bio: checkForExistingUser.bio,
+                            token,
+                            showLikedBlogs: checkForExistingUser.showLikedBlogs,
+                            showSavedBlogs: checkForExistingUser.showSavedBlogs,
+                        },
+                    });
+                }
+
                 console.error("Failed to send verification email:", emailErr.message);
                 return res.status(500).json({
                     success: false,
