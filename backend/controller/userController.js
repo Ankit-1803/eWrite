@@ -106,37 +106,46 @@ async function createUser(req, res) {
         }
 
         // Check if user already exists
-        const checkForExistingUser = await User.findOne({ email });
+        const checkForExistingUser = await User.findOne({ email }).select("+googleAuth +password +isVerify");
 
         if (checkForExistingUser) {
-            if (checkForExistingUser.googleAuth) {
+            if (checkForExistingUser.googleAuth && !checkForExistingUser.password) {
                 return res.status(400).json({
-                    success: true,
-                    message: "This email is already registered. Please continue with google",  
+                    success: false,
+                    message: "This email is already registered with Google. Please continue with Google sign in.",  
                 });
             }
 
             if (checkForExistingUser.isVerify) {
                 return res.status(400).json({
                     success: false,
-                    message: "This user is already exist",
+                    message: "An account with this email already exists. Please sign in.",
                 });
             } else {
+                // User exists but is unverified -> Resend verification email
                 let verificationToken = await generateJWT({ email: checkForExistingUser.email, id: checkForExistingUser._id });
-                // Send verification link to user's email
-                await transporter.sendMail({
-                    from: emailSender,
-                    to: checkForExistingUser.email,
-                    subject: "Email verification for eWrite",
-                    text: "Please verify your email",
-                    html: `<h1> Click on the link to verify your email </h1>
-                    <a href="${clientUrl}/verify-email/${verificationToken}">Verify Email</a>
-                    `,
-                });
-                return res.status(200).json({
-                    success: true,
-                    message: "Please check your email to verify your account",
-                });
+                try {
+                    await transporter.sendMail({
+                        from: emailSender,
+                        to: checkForExistingUser.email,
+                        subject: "Email verification for eWrite",
+                        text: "Please verify your email",
+                        html: `<h1> Click on the link to verify your email </h1>
+                        <a href="${clientUrl}/verify-email/${verificationToken}">Verify Email</a>
+                        `,
+                    });
+                    return res.status(200).json({
+                        success: true,
+                        message: "A verification email has been resent to your account. Please check your inbox.",
+                    });
+                } catch (emailErr) {
+                    console.error("Failed to resend verification email:", emailErr.message);
+                    return res.status(500).json({
+                        success: false,
+                        message: "Failed to send verification email. " + (emailErr.message.includes("ETIMEDOUT") ? "Outbound SMTP port 465 timed out on Render free tier. Please configure RESEND_API_KEY." : emailErr.message),
+                        error: emailErr.message,
+                    });
+                }
             }
         }
 
@@ -271,20 +280,20 @@ async function login(req, res) {
 
         // Check if user exists
         const checkForExistingUser = await User.findOne({ email }).select(
-            "password isVerify name email profilePic username bio showLikedBlogs showSavedBlogs"
+            "+password +isVerify +googleAuth name email profilePic username bio showLikedBlogs showSavedBlogs"
         );
 
         if (!checkForExistingUser) {
             return res.status(400).json({
                 success: false,
-                message: "This user is not exist",
+                message: "This user does not exist",
             });
         }
         
-        if (checkForExistingUser.googleAuth) {
+        if (checkForExistingUser.googleAuth && !checkForExistingUser.password) {
             return res.status(400).json({
-                success: true,
-                message: "This email is already registered. Please continue with google",  
+                success: false,
+                message: "This email is registered with Google. Please continue with Google sign in.",  
             });
         }
         
@@ -532,11 +541,18 @@ async function googleAuth(req, res) {
         const { name, email } = response;
 
         // Check if user already exists
-        let user = await User.findOne({ email });
+        let user = await User.findOne({ email }).select("+googleAuth +password +isVerify");
 
-        // If user already registered with password auth vs google auth
+        // If user already exists:
         if (user) {
-            if (user.googleAuth) {
+            // Allow login if user was registered with Google or has no password (OAuth account)
+            if (user.googleAuth || !user.password) {
+                if (!user.googleAuth || !user.isVerify) {
+                    user.googleAuth = true;
+                    user.isVerify = true;
+                    await user.save();
+                }
+
                 let token = await generateJWT({ email: user.email, id: user._id });
 
                 return res.status(200).json({
@@ -557,7 +573,7 @@ async function googleAuth(req, res) {
             } else {
                 return res.status(400).json({
                     success: false,
-                    message: "This email is already registered. Please continue with password",
+                    message: "This email is registered with a password. Please sign in with your email and password.",
                 });
             }
         }

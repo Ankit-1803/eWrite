@@ -34,12 +34,10 @@ const userSchema=new mongoose.Schema({
     isVerify: {
         type: Boolean,
         default: false,
-        select: false,
     },
     googleAuth: {
         type: Boolean,
         default: false,
-        select: false,
     },
     profilePic: {
         type: String,

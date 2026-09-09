@@ -28,13 +28,13 @@ const transporter = {
 
         // 1. If Resend API Key is provided (Recommended for Render free tier over HTTPS port 443)
         if (process.env.RESEND_API_KEY) {
-            const sender = process.env.EMAIL_FROM || from || "onboarding@resend.dev";
+            const sender = process.env.EMAIL_FROM || "eWrite <onboarding@resend.dev>";
             const recipients = Array.isArray(to) ? to : [to];
 
             const res = await fetch("https://api.resend.com/emails", {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+                    "Authorization": `Bearer ${process.env.RESEND_API_KEY.trim()}`,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
@@ -49,6 +49,7 @@ const transporter = {
             const data = await res.json();
             if (!res.ok) {
                 const errorMsg = data.message || (data.errors ? JSON.stringify(data.errors) : "Failed to send email via Resend API");
+                console.error("Resend API error:", data);
                 throw new Error(`Resend API error: ${errorMsg}`);
             }
             return data;
