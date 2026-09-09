@@ -523,7 +523,7 @@ This project helped strengthen practical knowledge of:
 
 <img width="1436" height="833" alt="Screenshot 2026-09-09 at 5 31 24 PM" src="https://github.com/user-attachments/assets/e65e3b41-3c3a-483d-b4c2-fbf9658d08bf" />
 
-*Edit Profile page
+* Edit Profile page
 <img width="1470" height="837" alt="Screenshot 2026-09-09 at 5 32 39 PM" src="https://github.com/user-attachments/assets/788442fa-ac84-47b4-a1f5-bbf57c2ebe2b" />
 
 * Search blog
