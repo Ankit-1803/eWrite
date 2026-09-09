@@ -8,9 +8,7 @@ The project is built with a modern **React frontend**, **Node.js/Express backend
 
 ## 🚀 Live Demo
 
-🔗 **Live Website:** [Add your deployed frontend URL here]
-
-🔗 **Backend API:** [Add your deployed backend URL here]
+🔗 **Live Website:** https://e-write.vercel.app/
 
 ---
 
@@ -31,7 +29,6 @@ The application follows a client-server architecture where the frontend communic
 * User registration and login
 * Secure authentication
 * Protected user-specific operations
-* User session management
 * User-specific blog management
 
 ### 📝 Blog Management
@@ -82,6 +79,7 @@ The blog editor supports structured content such as:
 
 * Headings
 * Paragraphs
+* Code
 * Ordered lists
 * Unordered lists
 * Multiple content blocks
@@ -126,10 +124,10 @@ For example:
 
 ### Deployment & Services
 
-* Frontend deployment: **[Your hosting service]**
+* Frontend deployment: **Vercel**
 * Backend deployment: **Render**
 * Database: **MongoDB Atlas**
-* Email service: **[Your email service]**
+* Email service: **Resend**
 
 ---
 
@@ -500,65 +498,36 @@ This project helped strengthen practical knowledge of:
 
 ## 📸 Screenshots
 
-Add screenshots of your application here.
+* Create account page 
+<img width="1469" height="839" alt="Screenshot 2026-09-09 at 5 13 21 PM" src="https://github.com/user-attachments/assets/6c01b1b0-26e6-4985-b295-6da8d456e9b9" />
 
-Example:
+* Login page
+<img width="1470" height="836" alt="Screenshot 2026-09-09 at 5 15 57 PM" src="https://github.com/user-attachments/assets/54648890-2e3c-46e3-bf10-140e98fa9cb1" />
 
-```text
-### Home Page
+* Add Blog section
+<img width="1470" height="832" alt="Screenshot 2026-09-09 at 5 16 48 PM" src="https://github.com/user-attachments/assets/68583540-783e-499b-bbbf-4760b1ded0a9" />
 
-[Add screenshot here]
+* Blog page
+<img width="1470" height="832" alt="Screenshot 2026-09-09 at 5 25 54 PM" src="https://github.com/user-attachments/assets/6ef54452-8a4b-4bc3-884a-2857471b8836" />
+<img width="1468" height="834" alt="Screenshot 2026-09-09 at 5 26 10 PM" src="https://github.com/user-attachments/assets/8b7ed705-d8da-4388-bf9e-705a07838af8" />
+<img width="1469" height="832" alt="Screenshot 2026-09-09 at 5 26 25 PM" src="https://github.com/user-attachments/assets/a8915076-83c9-4adf-a097-ce20bc8f69be" />
 
-### Blog Editor
+* Edit blog page
+<img width="1470" height="836" alt="Screenshot 2026-09-09 at 5 26 50 PM" src="https://github.com/user-attachments/assets/04035dc0-a1b9-4fba-895d-327d200010eb" />
 
-[Add screenshot here]
+* Home page
+<img width="1470" height="628" alt="Screenshot 2026-09-09 at 5 29 35 PM" src="https://github.com/user-attachments/assets/5b972c9f-e71f-4a92-af73-42a366a2dc98" />
 
-### User Profile
+* Profile page of user
+<img width="1470" height="834" alt="Screenshot 2026-09-09 at 5 30 55 PM" src="https://github.com/user-attachments/assets/f3442203-12e1-4df6-9d4c-d40621d9f023" />
 
-[Add screenshot here]
+<img width="1436" height="833" alt="Screenshot 2026-09-09 at 5 31 24 PM" src="https://github.com/user-attachments/assets/e65e3b41-3c3a-483d-b4c2-fbf9658d08bf" />
 
-### Saved Blogs
+*Edit Profile page
+<img width="1470" height="837" alt="Screenshot 2026-09-09 at 5 32 39 PM" src="https://github.com/user-attachments/assets/788442fa-ac84-47b4-a1f5-bbf57c2ebe2b" />
 
-[Add screenshot here]
-```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome.
-
-If you would like to contribute:
-
-1. Fork the repository
-2. Create a new branch
-
-```bash
-git checkout -b feature/your-feature
-```
-
-3. Make your changes
-4. Commit your changes
-
-```bash
-git commit -m "Add your feature"
-```
-
-5. Push the branch
-
-```bash
-git push origin feature/your-feature
-```
-
-6. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is currently available for educational and personal use.
-
-If you plan to distribute or modify this project, add an appropriate open-source license such as MIT.
+* Search blog
+<img width="1470" height="766" alt="Screenshot 2026-09-09 at 5 33 14 PM" src="https://github.com/user-attachments/assets/fe08a412-7905-4e0f-b33b-76ba43c30388" />
 
 ---
 
@@ -568,7 +537,16 @@ If you plan to distribute or modify this project, add an appropriate open-source
 
 Engineering Student
 
-GitHub: [Your GitHub Profile]
+GitHub: https://github.com/Ankit-1803
+
+---
+
+LinkedIn: https://www.linkedin.com/in/ankit-raj-851683371/
+
+---
+
+LeetCode: https://leetcode.com/u/ankitraj03/
+
 
 ---
 
@@ -577,5 +555,4 @@ GitHub: [Your GitHub Profile]
 If you found this project useful or interesting, consider giving the repository a ⭐ on GitHub.
 
 ---
-
-### 💡 Built with curiosity, code, and a lot of debugging.
+## Thank you
