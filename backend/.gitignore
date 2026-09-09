@@ -1,0 +1,28 @@
+# Environment & Secrets
+.env
+*.env
+.env.*
+!.env.example
+
+# Firebase Admin Credentials & Service Accounts
+ewrite-fe5d3-firebase-adminsdk-fbsvc-2dc66c3111.json
+*-firebase-adminsdk-*.json
+*firebase-adminsdk*.json
+*serviceAccountKey*.json
+*service-account*.json
+firebase-adminsdk.json
+
+# Dependencies
+node_modules/
+
+# Uploads
+uploads/
+
+# Logs
+logs/
+*.log
+
+# OS & Editor
+.DS_Store
+.vscode/
+.idea/
